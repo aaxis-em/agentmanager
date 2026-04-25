@@ -79,8 +79,8 @@ func main() {
 			fmt.Printf("Agent %d (%-11s) -> Epoch Best: %.3f (Overall Best: %.3f) Route: %v (Ants: %d)\n",
 				i+1, agentNames[i], results[i].Dist, agentBestDist[i], results[i].Route, agents[i].GetAntCount())
 		}
-		
-		fmt.Printf("\n>> LOCAL BEST THIS EPOCH: Agent %d (%s) with distance %.3f\n", 
+
+		fmt.Printf("\n>> LOCAL BEST THIS EPOCH: Agent %d (%s) with distance %.3f\n",
 			bestIdx+1, agentNames[bestIdx], results[bestIdx].Dist)
 
 		// --- 2. Stigmergic pheromone merge ---
@@ -120,7 +120,7 @@ func main() {
 				edgeCounts[Edge{u, v}]++
 			}
 		}
-		
+
 		consensusFound := false
 		for edge, count := range edgeCounts {
 			if count >= 2 {
@@ -177,7 +177,7 @@ func main() {
 			agents[i].BlendPheromones(mergedTau, blendRatio)
 		}
 	}
-	
+
 	fmt.Println("\n=========================================================")
 	fmt.Println("    Simulation Complete                                  ")
 	fmt.Println("=========================================================")

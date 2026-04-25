@@ -118,7 +118,6 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			globalBestDist = math.Inf(1)
 			globalBestRoute = nil
 			globalMu.Unlock()
-
 			ctx, cancel := context.WithCancel(context.Background())
 			cancelFunc = cancel
 
@@ -194,6 +193,8 @@ func runSwarm(
 	varianceWindow := [nAgents][]float64{}
 
 	type Edge struct{ U, V int }
+	
+	bestLocalDistSent := math.Inf(1)
 
 	// ---- Main epoch loop ----
 	for {
@@ -232,7 +233,11 @@ func runSwarm(
 				bestIdx = i
 			}
 		}
-		sendLocalBest(results[bestIdx].Route, results[bestIdx].Dist)
+		
+		if results[bestIdx].Dist < bestLocalDistSent {
+			bestLocalDistSent = results[bestIdx].Dist
+			sendLocalBest(results[bestIdx].Route, results[bestIdx].Dist)
+		}
 
 		// 3. Stigmergic pheromone merge (weighted by inverse distance).
 		weights := [nAgents]float64{}

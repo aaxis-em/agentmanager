@@ -94,7 +94,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 				// Record and send if strictly better than the global best
 				if distance < state.bestDistance {
 					state.bestDistance = distance
-					state.bestPath = core.CloneTour(path)
+					state.bestPath = append([]int(nil), path...)
 					
 					// Safely write out
 					connMu.Lock()
@@ -111,7 +111,18 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			}
 
 			for i := 0; i < 3; i++ {   // Spawn 3 agents
-				go core.RunAgent(ctx, i, msg.Matrix, reportImprovement)
+				go func() {
+					agent := core.NewAgent(msg.Matrix, core.Config{})
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+							res := agent.Run(10)
+							reportImprovement(res.Route, res.Dist)
+						}
+					}
+				}()
 			}
 		}
 	}

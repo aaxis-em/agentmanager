@@ -220,3 +220,64 @@ func (a *Agent) Run(iterations int) Result {
 func round4(v float64) float64 {
 	return math.Round(v*10000) / 10000
 }
+
+// GetTauMatrix returns a deep copy of the current pheromone matrix.
+func (a *Agent) GetTauMatrix() [][]float64 {
+	cpy := make([][]float64, a.n)
+	for i := 0; i < a.n; i++ {
+		cpy[i] = make([]float64, a.n)
+		copy(cpy[i], a.tauMatrix[i])
+	}
+	return cpy
+}
+
+// BlendPheromones merges a global pheromone matrix into the local one using a blendRatio.
+func (a *Agent) BlendPheromones(globalTau [][]float64, blendRatio float64) {
+	for i := 0; i < a.n; i++ {
+		for j := 0; j < a.n; j++ {
+			val := (1.0-blendRatio)*a.tauMatrix[i][j] + blendRatio*globalTau[i][j]
+			a.tauMatrix[i][j] = round4(val)
+		}
+	}
+}
+
+// Disrupt partially randomizes the pheromone matrix by resetting values toward 1.0.
+func (a *Agent) Disrupt(strength float64) {
+	for i := 0; i < a.n; i++ {
+		for j := 0; j < a.n; j++ {
+			val := (1.0-strength)*a.tauMatrix[i][j] + strength*1.0
+			a.tauMatrix[i][j] = round4(val)
+		}
+	}
+}
+
+// SetAntCount dynamically adjusts the number of ants the agent runs.
+func (a *Agent) SetAntCount(count int) {
+	if count < 1 {
+		count = 1
+	}
+	a.antCount = count
+}
+
+// GetAntCount returns the current number of ants the agent uses.
+func (a *Agent) GetAntCount() int {
+	return a.antCount
+}
+
+// InjectBestRoute deposits pheromone along a known-good route into the agent's
+// local pheromone matrix. The strength parameter controls how aggressively the
+// global signal is applied (typically the ratio agentBest/globalBest, capped).
+// This is the mechanism by which global knowledge feeds back into local search
+// without erasing the agent's own discoveries.
+func (a *Agent) InjectBestRoute(route []int, dist float64, strength float64) {
+	if len(route) == 0 || dist <= 0 {
+		return
+	}
+	delta := (a.q / dist) * strength
+	for k := 0; k < len(route); k++ {
+		i := route[k]
+		j := route[(k+1)%len(route)]
+		a.tauMatrix[i][j] = round4(a.tauMatrix[i][j] + delta)
+		a.tauMatrix[j][i] = round4(a.tauMatrix[j][i] + delta)
+	}
+}

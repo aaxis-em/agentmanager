@@ -178,22 +178,27 @@ func runSwarm(
 	globalBestDist *float64,
 	globalBestRoute *[]int,
 ) {
-	const nAgents = 3
+	const nAgents = 6
 	nNodes := len(matrix)
 
 	// --- Agent specialisation ---
 	agents := [nAgents]*core.Agent{
-		core.NewAgent(matrix, core.Config{Alpha: 0.5, Beta: 8.0, Evaporation: 0.1, AntCount: 5}), // Explorer
+		core.NewAgent(matrix, core.Config{Alpha: 1.0, Beta: 5.0, Evaporation: 0.5, AntCount: 2}), // Explorer
 		core.NewAgent(matrix, core.Config{Alpha: 3.0, Beta: 2.0, Evaporation: 0.1, AntCount: 5}), // Exploiter
 		core.NewAgent(matrix, core.Config{Alpha: 1.0, Beta: 5.0, Evaporation: 0.5, AntCount: 5}), // Diversifier
+		core.NewAgent(matrix, core.Config{Alpha: 0.3, Beta: 7.0, Evaporation: 0.3, AntCount: 5}), // Explorer
+		core.NewAgent(matrix, core.Config{Alpha: 2.0, Beta: 3.0, Evaporation: 0.2, AntCount: 5}), // Exploiter
+		core.NewAgent(matrix, core.Config{Alpha: 1.0, Beta: 9.0, Evaporation: 0.5, AntCount: 5}), // Diversifier
+
 	}
 
 	// Per-agent tracking.
-	agentBestDist := [nAgents]float64{math.Inf(1), math.Inf(1), math.Inf(1)}
+	agentBestDist := [nAgents]float64{math.Inf(1), math.Inf(1), math.Inf(1), math.Inf(1), math.Inf(1), math.Inf(1)}
+	// agentBestDist := [nAgents]float64{math.Inf(1)}
 	varianceWindow := [nAgents][]float64{}
 
 	type Edge struct{ U, V int }
-	
+
 	bestLocalDistSent := math.Inf(1)
 
 	// ---- Main epoch loop ----
@@ -233,7 +238,7 @@ func runSwarm(
 				bestIdx = i
 			}
 		}
-		
+
 		if results[bestIdx].Dist < bestLocalDistSent {
 			bestLocalDistSent = results[bestIdx].Dist
 			sendLocalBest(results[bestIdx].Route, results[bestIdx].Dist)

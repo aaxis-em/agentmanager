@@ -82,6 +82,41 @@ func NewAgent(distMatrix [][]float64, cfg Config) *Agent {
 	}
 }
 
+// TwoOpt applies the 2-opt local search heuristic to improve a given route.
+func (a *Agent) TwoOpt(route []int) []int {
+	n := len(route)
+	if n < 3 {
+		return route
+	}
+
+	improved := true
+	bestRoute := make([]int, n)
+	copy(bestRoute, route)
+
+	for improved {
+		improved = false
+		for i := 1; i < n-1; i++ {
+			for k := i + 1; k < n; k++ {
+				v1 := bestRoute[i-1]
+				v2 := bestRoute[i]
+				v3 := bestRoute[k]
+				v4 := bestRoute[(k+1)%n]
+
+				currentDist := a.distMatrix[v1][v2] + a.distMatrix[v3][v4]
+				newDist := a.distMatrix[v1][v3] + a.distMatrix[v2][v4]
+
+				if newDist < currentDist-1e-6 {
+					for start, end := i, k; start < end; start, end = start+1, end-1 {
+						bestRoute[start], bestRoute[end] = bestRoute[end], bestRoute[start]
+					}
+					improved = true
+				}
+			}
+		}
+	}
+	return bestRoute
+}
+
 // RouteLength calculates the total distance of a circular route.
 func (a *Agent) RouteLength(route []int) float64 {
 	total := 0.0
@@ -198,6 +233,7 @@ func (a *Agent) Run(iterations int) Result {
 
 		for antID := 0; antID < a.antCount; antID++ {
 			route := a.constructRoute()
+			route = a.TwoOpt(route)
 			dist := round4(a.RouteLength(route))
 
 			// deposit immediately so the next ant sees updated pheromones

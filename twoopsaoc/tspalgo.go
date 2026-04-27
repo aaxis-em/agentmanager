@@ -1,26 +1,15 @@
-package core
+package twoopsaoc
 
 import (
 	"math"
 	"math/rand"
 )
 
-// Config holds optional ACO parameters.
-type Config struct {
-	Alpha       float64
-	Beta        float64
-	Evaporation float64
-	Q           float64
-	AntCount    int
-}
-
-// Result holds the best route and its total distance.
 type Result struct {
 	Route []int
 	Dist  float64
 }
 
-// Agent is the ACO solver.
 type Agent struct {
 	distMatrix [][]float64
 	tauMatrix  [][]float64
@@ -33,46 +22,10 @@ type Agent struct {
 	antCount    int
 }
 
-// NewAgent constructs a new Agent.
-// distMatrix must be an N×N symmetric matrix of distances.
-// Zero values in config fields fall back to the same defaults as the JS version.
-func NewAgent(distMatrix [][]float64, cfg Config) *Agent {
-	n := len(distMatrix)
-
-	// initialise pheromone matrix to 1.0
-	tau := make([][]float64, n)
-	for i := range tau {
-		tau[i] = make([]float64, n)
-		for j := range tau[i] {
-			tau[i][j] = 1.0
-		}
-	}
-
-	// apply defaults (mirrors JS defaults)
-	alpha := 1.0
-	if cfg.Alpha != 0 {
-		alpha = cfg.Alpha
-	}
-	beta := 5.0
-	if cfg.Beta != 0 {
-		beta = cfg.Beta
-	}
-	evaporation := 0.1
-	if cfg.Evaporation != 0 {
-		evaporation = cfg.Evaporation
-	}
-	q := 100.0
-	if cfg.Q != 0 {
-		q = cfg.Q
-	}
-	antCount := 5
-	if cfg.AntCount != 0 {
-		antCount = cfg.AntCount
-	}
-
+func NewAgent(distMatrix, tauMatrix [][]float64, n int, alpha, beta, evaporation, q float64, antCount int) *Agent {
 	return &Agent{
 		distMatrix:  distMatrix,
-		tauMatrix:   tau,
+		tauMatrix:   tauMatrix,
 		n:           n,
 		alpha:       alpha,
 		beta:        beta,
@@ -82,7 +35,6 @@ func NewAgent(distMatrix [][]float64, cfg Config) *Agent {
 	}
 }
 
-// TwoOpt applies the 2-opt local search heuristic to improve a given route.
 func (a *Agent) TwoOpt(route []int) []int {
 	n := len(route)
 	if n < 3 {
@@ -117,7 +69,6 @@ func (a *Agent) TwoOpt(route []int) []int {
 	return bestRoute
 }
 
-// RouteLength calculates the total distance of a circular route.
 func (a *Agent) RouteLength(route []int) float64 {
 	total := 0.0
 	for i := 0; i < len(route); i++ {
@@ -126,10 +77,9 @@ func (a *Agent) RouteLength(route []int) float64 {
 	return total
 }
 
-// constructRoute builds a single ant's tour using pheromone + heuristic probabilities.
 func (a *Agent) constructRoute() []int {
 	visited := make([]bool, a.n)
-	route := []int{0} // always start at node 0
+	route := []int{0}
 	visited[0] = true
 
 	for step := 1; step < a.n; step++ {
@@ -149,7 +99,6 @@ func (a *Agent) constructRoute() []int {
 			}
 
 			tau := math.Pow(a.tauMatrix[current][j], a.alpha)
-			// scaled heuristic (100/d)^beta to avoid floating-point underflow
 			eta := math.Pow(100.0/d, a.beta)
 			w := tau * eta
 
@@ -158,7 +107,6 @@ func (a *Agent) constructRoute() []int {
 			total += w
 		}
 
-		// roulette-wheel selection
 		next := -1
 		r := rand.Float64()
 		cumulative := 0.0
@@ -174,7 +122,6 @@ func (a *Agent) constructRoute() []int {
 			}
 		}
 
-		// fallback for floating-point edge cases
 		if next == -1 {
 			for j := a.n - 1; j >= 0; j-- {
 				if !visited[j] {
@@ -191,7 +138,6 @@ func (a *Agent) constructRoute() []int {
 	return route
 }
 
-// evaporate reduces pheromone levels on all edges by the evaporation rate.
 func (a *Agent) evaporate() {
 	for i := 0; i < a.n; i++ {
 		for j := 0; j < a.n; j++ {
@@ -204,7 +150,6 @@ func (a *Agent) evaporate() {
 	}
 }
 
-// deposit adds pheromone to every edge in the given route.
 func (a *Agent) deposit(route []int, dist float64) {
 	delta := a.q / dist
 	for k := 0; k < len(route); k++ {
@@ -215,10 +160,6 @@ func (a *Agent) deposit(route []int, dist float64) {
 	}
 }
 
-// Run executes the ACO simulation for the given number of iterations.
-// It mirrors the JS run() logic exactly: evaporate first, then deploy ants
-// one at a time with immediate pheromone deposit so each subsequent ant
-// sees the updated matrix.
 func (a *Agent) Run(iterations int) Result {
 	if iterations <= 0 {
 		iterations = 3
@@ -236,7 +177,6 @@ func (a *Agent) Run(iterations int) Result {
 			route = a.TwoOpt(route)
 			dist := round4(a.RouteLength(route))
 
-			// deposit immediately so the next ant sees updated pheromones
 			a.deposit(route, dist)
 
 			if dist < iterBest.Dist {
@@ -252,12 +192,10 @@ func (a *Agent) Run(iterations int) Result {
 	return globalBest
 }
 
-// round4 rounds a float64 to 4 decimal places, mirroring JS toFixed(4).
 func round4(v float64) float64 {
 	return math.Round(v*10000) / 10000
 }
 
-// GetTauMatrix returns a deep copy of the current pheromone matrix.
 func (a *Agent) GetTauMatrix() [][]float64 {
 	cpy := make([][]float64, a.n)
 	for i := 0; i < a.n; i++ {
@@ -267,7 +205,6 @@ func (a *Agent) GetTauMatrix() [][]float64 {
 	return cpy
 }
 
-// BlendPheromones merges a global pheromone matrix into the local one using a blendRatio.
 func (a *Agent) BlendPheromones(globalTau [][]float64, blendRatio float64) {
 	for i := 0; i < a.n; i++ {
 		for j := 0; j < a.n; j++ {
@@ -277,7 +214,6 @@ func (a *Agent) BlendPheromones(globalTau [][]float64, blendRatio float64) {
 	}
 }
 
-// Disrupt partially randomizes the pheromone matrix by resetting values toward 1.0.
 func (a *Agent) Disrupt(strength float64) {
 	for i := 0; i < a.n; i++ {
 		for j := 0; j < a.n; j++ {
@@ -287,7 +223,6 @@ func (a *Agent) Disrupt(strength float64) {
 	}
 }
 
-// SetAntCount dynamically adjusts the number of ants the agent runs.
 func (a *Agent) SetAntCount(count int) {
 	if count < 1 {
 		count = 1
@@ -295,16 +230,10 @@ func (a *Agent) SetAntCount(count int) {
 	a.antCount = count
 }
 
-// GetAntCount returns the current number of ants the agent uses.
 func (a *Agent) GetAntCount() int {
 	return a.antCount
 }
 
-// InjectBestRoute deposits pheromone along a known-good route into the agent's
-// local pheromone matrix. The strength parameter controls how aggressively the
-// global signal is applied (typically the ratio agentBest/globalBest, capped).
-// This is the mechanism by which global knowledge feeds back into local search
-// without erasing the agent's own discoveries.
 func (a *Agent) InjectBestRoute(route []int, dist float64, strength float64) {
 	if len(route) == 0 || dist <= 0 {
 		return

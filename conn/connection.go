@@ -1,7 +1,7 @@
 package conn
 
 import (
-	"agentmanager/agent"
+	"agentmanager/core"
 	"context"
 	"github.com/gorilla/websocket"
 	"log"
@@ -81,7 +81,7 @@ func HandleConnection(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			go agent.RunSwarm(ctx, msg.Matrix, sendLocalBest, &globalMu, &globalBestDist, &globalBestRoute)
+			go core.RunSwarm(ctx, msg.Matrix, sendLocalBest, &globalMu, &globalBestDist, &globalBestRoute)
 
 		case "global_best":
 			if len(msg.Path) == 0 {

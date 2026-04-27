@@ -1,6 +1,6 @@
 ## AgentManager
 
-It is a distributed system for solving the Traveling Salesperson Problem (TSP) with multiple agent(6) and each agent has different types of characteristics which makes exploration and exploitation.
+A distributed system for solving TSP with multiple agent(6) and each agent has different types of characteristics which makes exploration and exploitation.
 
 ## Architecture
 

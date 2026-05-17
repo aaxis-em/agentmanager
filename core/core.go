@@ -1,7 +1,7 @@
 package core
 
 import (
-	"agentmanager/twoopsaoc"
+	"agentmanager/twoopsaco"
 	"context"
 	"math"
 	"sync"
@@ -20,7 +20,7 @@ type Result struct {
 	Dist  float64
 }
 
-func NewAgent(distMatrix [][]float64, cfg Config) *twoopsaoc.Agent {
+func NewAgent(distMatrix [][]float64, cfg Config) *twoopsaco.Agent {
 	n := len(distMatrix)
 
 	tau := make([][]float64, n)
@@ -52,7 +52,7 @@ func NewAgent(distMatrix [][]float64, cfg Config) *twoopsaoc.Agent {
 		antCount = cfg.AntCount
 	}
 
-	return twoopsaoc.NewAgent(distMatrix, tau, n, alpha, beta, evaporation, q, antCount)
+	return twoopsaco.NewAgent(distMatrix, tau, n, alpha, beta, evaporation, q, antCount)
 }
 func RunSwarm(
 	ctx context.Context,
@@ -111,8 +111,8 @@ func RunSwarm(
 	}
 }
 func adaptAgents(
-	agents []*twoopsaoc.Agent,
-	results [6]twoopsaoc.Result,
+	agents []*twoopsaco.Agent,
+	results [6]twoopsaco.Result,
 	weights [6]float64,
 	varianceWindow *[6][]float64,
 	mergedTau [][]float64,
@@ -171,7 +171,7 @@ func mergePheromones(
 	matrices [6][][]float64,
 	weights [6]float64,
 	nNodes int,
-	results [6]twoopsaoc.Result,
+	results [6]twoopsaco.Result,
 ) [][]float64 {
 
 	merged := make([][]float64, nNodes)
@@ -210,7 +210,7 @@ func mergePheromones(
 
 	return merged
 }
-func computeWeights(results [6]twoopsaoc.Result) [6]float64 {
+func computeWeights(results [6]twoopsaco.Result) [6]float64 {
 	var weights [6]float64
 	sum := 0.0
 
@@ -223,7 +223,7 @@ func computeWeights(results [6]twoopsaoc.Result) [6]float64 {
 	}
 	return weights
 }
-func findBestIndex(results [6]twoopsaoc.Result) int {
+func findBestIndex(results [6]twoopsaco.Result) int {
 	best := 0
 	for i := 1; i < len(results); i++ {
 		if results[i].Dist < results[best].Dist {
@@ -232,16 +232,16 @@ func findBestIndex(results [6]twoopsaoc.Result) int {
 	}
 	return best
 }
-func updateAgentBests(results [6]twoopsaoc.Result, agentBestDist *[6]float64) {
+func updateAgentBests(results [6]twoopsaco.Result, agentBestDist *[6]float64) {
 	for i := range results {
 		if results[i].Dist < agentBestDist[i] {
 			agentBestDist[i] = results[i].Dist
 		}
 	}
 }
-func runAgents(agents []*twoopsaoc.Agent) ([6]twoopsaoc.Result, [6][][]float64) {
+func runAgents(agents []*twoopsaco.Agent) ([6]twoopsaco.Result, [6][][]float64) {
 	var wg sync.WaitGroup
-	results := [6]twoopsaoc.Result{}
+	results := [6]twoopsaco.Result{}
 	matrices := [6][][]float64{}
 
 	for i := 0; i < len(agents); i++ {
@@ -256,8 +256,8 @@ func runAgents(agents []*twoopsaoc.Agent) ([6]twoopsaoc.Result, [6][][]float64) 
 
 	return results, matrices
 }
-func initAgents(matrix [][]float64) []*twoopsaoc.Agent {
-	return []*twoopsaoc.Agent{
+func initAgents(matrix [][]float64) []*twoopsaco.Agent {
+	return []*twoopsaco.Agent{
 		NewAgent(matrix, Config{Alpha: 1.0, Beta: 5.0, Evaporation: 0.5, AntCount: 2}), // Explorer
 		NewAgent(matrix, Config{Alpha: 3.0, Beta: 2.0, Evaporation: 0.1, AntCount: 5}), // Exploiter
 		NewAgent(matrix, Config{Alpha: 1.0, Beta: 5.0, Evaporation: 0.5, AntCount: 5}), // Diversifier

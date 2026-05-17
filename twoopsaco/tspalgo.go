@@ -1,4 +1,4 @@
-package twoopsaoc
+package twoopsaco
 
 import (
 	"math"

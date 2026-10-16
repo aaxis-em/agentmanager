@@ -4,7 +4,33 @@ It is a distributed system for solving the Traveling Salesperson Problem (TSP) w
 
 ## Architecture
 
-![Architecture Diagram](./img/architecture.png)
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TB
+    server["<b>Main Server + UI</b><br/>distance matrix · global best"]
+
+    subgraph am["AgentManager  ×N nodes"]
+        handler["<b>WebSocket handler</b><br/>/ws · conn/connection.go"]
+
+        subgraph swarm["RunSwarm · epoch loop · core/core.go"]
+            agents["<b>6 agents in parallel</b><br/>2 Explorers · 2 Exploiters · 2 Diversifiers<br/>ACO + 2-Opt · 10 iterations each"]
+            report["<b>Report</b><br/>send local_best if the epoch's best improved"]
+            merge["<b>Merge pheromones</b><br/>weighted by 1 / tour length<br/>reinforce edges shared by ≥ 2 agents"]
+            adapt["<b>Adapt agents</b><br/>reset if stagnant · tune ant count<br/>blend merged trail · inject global best"]
+        end
+
+        global["<b>Global best</b><br/>route + distance"]
+    end
+
+    server <-->|"WebSocket · JSON<br/>↓ start, global_best<br/>↑ local_best"| handler
+    handler -->|"start / restart"| agents
+    agents --> report --> merge --> adapt
+    adapt -->|next epoch| agents
+    report -.->|local_best| handler
+    handler -->|global_best| global
+    global -.->|read each epoch| adapt
+```
+
 [ui+mainserver](https://github.com/CodeAauDeshBachau/Bahun)
 
 ## Setup
